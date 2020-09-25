@@ -1,4 +1,6 @@
-import srt, unidecode
+import srt, unidecode, webvtt
+from datetime import datetime
+from unidecode import unidecode
 from google_images_download import google_images_download  
 import os
 from cv2 import VideoWriter, VideoWriter_fourcc, imread, resize
@@ -12,12 +14,17 @@ def transliterate(string):
     :param string: string
     :return: closest string.
     """
-    from unidecode import unidecode
-
     if not isinstance(string, bytes):
         string = u''.join(string)
 
     return unidecode(string)
+
+
+def format_text(string):
+    for txt in transliterate(string).split("\n"):
+        if txt.strip() != "":
+            return txt
+    return "" 
 
 
 def make_video(subs, outimg=None, fps=30, size=None,
@@ -25,9 +32,9 @@ def make_video(subs, outimg=None, fps=30, size=None,
     fourcc = VideoWriter_fourcc(*format)
     vid = None
     total_frames=0
-    subslist = [{"content":s.content, "start":s.start, "end": s.end} for s in subs]
+    subslist = [{"content":s.text, "start":to_deltatime(s.start), "end": to_deltatime(s.end)} for s in subs if len(s.text.strip()) >0]
     for (i, sub) in enumerate(subslist):
-        image = paths[0][transliterate(sub["content"])][0]
+        image = paths[0][format_text(sub["content"])][0]
         if not os.path.exists(image):
             raise FileNotFoundError(image)
         img = imread(image)
@@ -38,6 +45,7 @@ def make_video(subs, outimg=None, fps=30, size=None,
         if size[0] != img.shape[1] and size[1] != img.shape[0]:
             img = resize(img, size)
 
+        print(sub)
         if len(subslist) == i + 1:
             frames = int(sub["end"].total_seconds()*fps - total_frames)
         else:
@@ -49,11 +57,17 @@ def make_video(subs, outimg=None, fps=30, size=None,
     vid.release()
     return vid
 
-def get_keywords_from_subs(subs):
-    return transliterate(",".join([s.content for s in subs]))
+def to_deltatime(timestp):
+    return datetime.strptime(timestp, "%H:%M:%S.%f") - datetime.strptime("00:00:00.000", "%H:%M:%S.%f") 
 
-with open("captions.srt") as f:
-    subs = srt.parse(f.read())
+
+def get_keywords_from_subs(subs):
+    return ",".join([format_text(s.text) for s in subs if len(s.text.strip()) >0])
+
+# with open("captions.srt") as f:
+#     subs = srt.parse(f.read())
+
+subs = webvtt.read('captions.vtt')
 
 response = google_images_download.googleimagesdownload()
 
@@ -62,7 +76,6 @@ paths = response.download(arguments)   #passing the arguments to the function
 
 print(paths)   #printing absolute paths of the downloaded images
 
-with open("captions.srt") as f:
-    subs = srt.parse(f.read())
-    make_video(subs, outimg=None, fps=2, size=None,is_color=True, format="XVID")
+subs = webvtt.read('captions.vtt')
+make_video(subs, outimg=None, fps=2, size=None,is_color=True, format="XVID")
 
