@@ -1,8 +1,7 @@
-import srt, unidecode, webvtt
+import srt, unidecode, webvtt, os
 from datetime import datetime
 from unidecode import unidecode
 from google_images_download import google_images_download  
-import os
 from cv2 import VideoWriter, VideoWriter_fourcc, imread, resize
 
 
@@ -21,7 +20,7 @@ def transliterate(string):
 
 
 def format_text(string):
-    for txt in transliterate(string).split("\n"):
+    for txt in transliterate(string).split("\n")[::-1]:
         if txt.strip() != "":
             return txt
     return "" 
