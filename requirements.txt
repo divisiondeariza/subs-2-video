@@ -1,0 +1,9 @@
+docopt==0.6.2
+google-images-download @ git+https://github.com/Joeclinton1/google-images-download.git@58a190b584bd690c6eaab745d519179a11c7c484
+numpy==1.19.2
+opencv-python==4.4.0.44
+selenium==3.141.0
+srt==3.4.1
+Unidecode==1.1.1
+urllib3==1.25.10
+webvtt-py==0.4.5
